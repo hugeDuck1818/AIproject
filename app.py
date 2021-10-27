@@ -4,11 +4,14 @@ from flask import Flask ,flash, request
 from PIL import Image
 import tensorflow as tf
 import numpy as np
+from flask_cors import CORS, cross_origin
 
 ALLOWED_EXTENSIONS = set([ 'png', 'jpg', 'jpeg'])
 
 model  = tf.keras.models.load_model("./deneme.h5")
 app = Flask(__name__)
+cors = CORS(app)
+app.config['CORS_HEADERS'] = 'Content-Type'
 
 emos = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
 
@@ -17,10 +20,12 @@ def allowed_file(filename):
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route("/",methods=["GET"])
+@cross_origin()
 def root():
     return "<h1>Here is the app<h1>"
     
 @app.route("/predict",methods=["POST"])
+@cross_origin()
 def predict():
     if request.method == 'POST':
         # check if the post request has the file part
