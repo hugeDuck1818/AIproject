@@ -1,11 +1,18 @@
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-from flask import Flask ,flash, request
+from flask import Flask ,flash, request,jsonify
 from PIL import Image
 import tensorflow as tf
 import numpy as np
+from lyrics import posSong , negSong
 from flask_cors import CORS, cross_origin
+from random import randint
 
+negEmo = ["angry","disgust","fear","sad"]
+posEmo = ["happy","surprise"]
+
+posSongLen = len(posSong)-1
+negSongLen = len(negSong)-1
 ALLOWED_EXTENSIONS = set([ 'png', 'jpg', 'jpeg'])
 
 model  = tf.keras.models.load_model("./deneme.h5")
@@ -14,6 +21,14 @@ cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 emos = ['angry', 'disgust', 'fear', 'happy', 'neutral', 'sad', 'surprise']
+def randomVerses(song):
+    lyrics = song["lyrics"]
+    splitted = lyrics.splitlines()
+    lenSplitted = len(splitted)
+    idx = randint(0,lenSplitted-2)
+    while(splitted[idx]=="" or splitted[idx][0]=="["):
+        idx =  randint(0,lenSplitted-2)
+    return [splitted[idx] , splitted[idx+1]]
 
 def allowed_file(filename):
     return '.' in filename and \
@@ -43,4 +58,12 @@ def predict():
             input_arr = tf.keras.preprocessing.image.img_to_array(image)
             input_arr = input_arr/255
             input_arr = np.array([input_arr])  # Convert single image to a batch.
-            return emos[np.argmax(model.predict(input_arr))]
+            emotion = emos[np.argmax(model.predict(input_arr))]
+            if(emotion in posEmo):
+                song = posSong[randint(0,posSongLen)]
+                
+            else:
+                song = negSong[randint(0,negSongLen)]
+
+            song["lyrics"] = randomVerses(song)
+            return jsonify({"emotion": emotion,"song":song})
